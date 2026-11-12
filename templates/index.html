@@ -6,6 +6,8 @@
     <title>Insight Transaksi E-Commerce</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         * { scrollbar-color: #cbd5e1 transparent; scrollbar-width: thin; }
         .filter-control { width:100%; min-width:0; border:1px solid #e2e8f0; border-radius:12px; background:#fff; color:#1e293b; padding:11px 13px; font-size:13px; outline:none; transition:box-shadow .18s,border-color .18s; }
@@ -37,6 +39,7 @@
         #tableBody td:first-child { position:sticky; left:0; z-index:5; background:#fff; font-weight:600; color:#1e40af; box-shadow:1px 0 0 #eef2f7; }
         #tableBody tr:nth-child(even) td:first-child { background:#fbfdff; }
         #tableBody tr:hover td:first-child { background:#eff6ff; }
+        #provinceMap { height:480px; border-radius:16px; background:#eff6ff; z-index:1; }
         @media (max-width:640px) { .panel { padding:16px; border-radius:16px; } .panel-heading h2 { font-size:15px; } }
     </style>
 </head>
@@ -83,11 +86,14 @@
                 <article class="panel"><div class="panel-heading"><div><p class="eyebrow">KOMPOSISI</p><h2 id="compositionTitle">Pesanan per status</h2></div><span class="chart-mark">02</span></div><label class="block text-xs font-medium text-slate-500 mb-3">Kelompok data
                     <select id="compositionField" class="filter-control mt-1"><option value="status">Status pesanan</option><option value="provinsi">Provinsi</option><option value="kategori">Kategori</option><option value="pembayaran">Metode pembayaran</option><option value="pengiriman">Opsi pengiriman</option><option value="bulan">Bulan (omzet)</option></select>
                 </label><div class="h-64"><canvas id="statusChart"></canvas></div></article>
-                <article class="panel"><div class="panel-heading"><div><p class="eyebrow">SEBARAN</p><h2 id="provinceTitle">10 provinsi teratas · omzet</h2></div><span class="chart-mark">03</span></div><label class="block text-xs font-medium text-slate-500 mb-3">Bandingkan berdasarkan
+                <article class="panel"><div class="panel-heading"><div><p class="eyebrow">SEBARAN</p><h2 id="provinceTitle">10 provinsi teratas · omzet</h2></div><span class="chart-mark">03</span></div><label class="block text-xs font-medium text-slate-500 mb-3">Tampilan
+                    <select id="provinceView" class="filter-control mt-1"><option value="chart">Grafik omzet tertinggi</option><option value="map">Heatmap</option></select>
+                </label><div id="provinceChartView"><label class="block text-xs font-medium text-slate-500 mb-2">Bandingkan berdasarkan
                     <select id="provinceMetric" class="filter-control mt-1"><option value="revenue">Total omzet</option><option value="orders">Jumlah pesanan</option><option value="items">Kuantitas produk</option><option value="returns">Produk dikembalikan</option><option value="discount">Total diskon</option></select>
-                </label><div class="h-64"><canvas id="provinceChart"></canvas></div></article>
+                </label><div class="h-64"><canvas id="provinceChart"></canvas></div></div><div id="provinceMapView" class="hidden"><div class="flex items-center justify-between gap-2 mb-3"><p class="text-sm text-slate-500">Warna lebih gelap berarti omzet lebih tinggi. Klik provinsi untuk memfilter dashboard.</p><div id="mapLegend" class="flex items-center gap-1 text-[10px] text-slate-500"></div></div><div id="provinceMap"></div><p class="mt-3 text-xs text-slate-400">Batas provinsi dari <a class="underline" href="https://github.com/mashadinoor/Indonesia-Geojson-2026" target="_blank" rel="noreferrer">GeoJSON Indonesia</a>.</p></div></article>
                 <article class="panel xl:col-span-2"><div class="panel-heading"><div><p class="eyebrow">PRODUK</p><h2>Jumlah pesanan per kategori</h2></div><span class="chart-mark">04</span></div><div class="h-80"><canvas id="categoryChart"></canvas></div></article>
             </div>
+            <article class="panel mb-6"><div class="panel-heading"><div><p class="eyebrow">SIMULASI WHAT-IF</p><h2>Simulasi dampak pengurangan diskon</h2></div><span class="chart-mark">05</span></div><p class="text-sm text-slate-500 mb-4">Pilih satu provinsi atau semua provinsi dari hasil filter dashboard. <b>Penurunan pesanan</b> adalah perkiraan jumlah order yang hilang; simulasi menganggap nilai rata-rata per order tetap sama. Hasil menunjukkan estimasi omzet, bukan laba karena data modal/COGS tidak tersedia.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><label class="text-xs font-medium text-slate-500">Cakupan daerah<select id="simProvince" class="filter-control mt-1"></select></label><label class="text-xs font-medium text-slate-500">Diskon dikurangi (%)<input id="discountCut" type="number" min="0" max="100" value="10" class="filter-control mt-1"></label><label class="text-xs font-medium text-slate-500">Perkiraan pesanan turun (%)<input id="volumeDrop" type="number" min="0" max="100" value="5" class="filter-control mt-1"></label></div><p class="mt-3 text-xs text-slate-400">Rumus: diskon yang dihemat − omzet yang hilang akibat perkiraan pesanan turun.</p><div id="simulationResult" class="grid grid-cols-1 md:grid-cols-3 2xl:grid-cols-6 gap-3 mt-5"></div></article>
             <article class="panel mb-6"><div class="panel-heading mb-1"><div><p class="eyebrow">JELAJAHI PRODUK</p><h2>Kategori dan subkategori</h2></div></div><p class="text-sm text-slate-500 mb-5">Pilih kategori induk untuk melihat semua jenis di dalamnya, atau klik subkategori untuk memfilter lebih spesifik.</p><div id="categorySections" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div></article>
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
                 <article class="panel"><div class="panel-heading"><div><p class="eyebrow">PEMBAYARAN</p><h2>Metode pembayaran</h2></div></div><div id="paymentList" class="space-y-3"></div></article>
@@ -113,6 +119,7 @@
     </main>
 <script>
     let offset = 0, latest = null, charts = {}, sortColumn = '', sortDirection = 'asc', exactColumnFilters = {};
+    let provinceMap = null, provinceLayer = null, geoJsonPromise = null;
     let categoryGroups = [];
     const $ = (id) => document.getElementById(id);
     const idr = (n) => 'Rp ' + Number(n || 0).toLocaleString('id-ID', {maximumFractionDigits: 0});
@@ -180,6 +187,49 @@
         $('provinceTitle').textContent = `10 provinsi teratas · ${labels[metric]}`;
         renderChart('provinceChart', {type:'bar',data:{labels:provinces.map(x=>x.name),datasets:[{label:labels[metric],data:provinces.map(x=>x[metric]),backgroundColor:'#3b82f6',borderRadius:6,barThickness:17}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:context=>metric==='revenue'||metric==='discount'?` ${idr(context.raw)}`:` ${count(context.raw)}`}}},scales:{x:{beginAtZero:true,ticks:{callback:v=>(metric==='revenue'||metric==='discount'?'Rp ':'')+Number(v).toLocaleString('id-ID')}}}}});
     }
+    function geoProvinceName(value) {
+        const key=String(value||'').trim().toUpperCase();
+        return ({'NANGGROE ACEH DARUSSALAM (NAD)':'ACEH','BANGKA BELITUNG':'KEPULAUAN BANGKA BELITUNG','DI YOGYAKARTA':'DAERAH ISTIMEWA YOGYAKARTA','NUSA TENGGARA BARAT (NTB)':'NUSA TENGGARA BARAT','NUSA TENGGARA TIMUR (NTT)':'NUSA TENGGARA TIMUR'})[key]||key;
+    }
+    async function renderProvinceMap(data) {
+        if (!window.L) { $('provinceMap').textContent='Library peta belum termuat.'; return; }
+        if (!geoJsonPromise) geoJsonPromise=fetch('/static/indonesia_provinces.geojson').then(response=>response.json());
+        try {
+            const geo=await geoJsonPromise, values=new Map(data.insights.top_provinces.map(row=>[geoProvinceName(row.name),Number(row.revenue||0)]));
+            const max=Math.max(1,...values.values()), colors=['#eff6ff','#bfdbfe','#60a5fa','#ef4444','#991b1b'];
+            const colorFor=value=>colors[value===0?0:Math.min(4,Math.ceil(value/max*4))];
+            $('mapLegend').innerHTML=colors.map(color=>`<span class="inline-block w-4 h-2.5 rounded-sm" style="background:${color}"></span>`).join('')+`<span class="ml-1">${idr(0)} – ${idr(max)}</span>`;
+            if(!provinceMap)provinceMap=L.map('provinceMap',{scrollWheelZoom:false,attributionControl:false}).setView([-2.5,118],4);
+            if(provinceLayer)provinceMap.removeLayer(provinceLayer);
+            provinceLayer=L.geoJSON(geo,{style:feature=>({fillColor:colorFor(values.get(geoProvinceName(feature.properties.PROVINSI))||0),weight:1,color:'#fff',fillOpacity:.88}),onEachFeature:(feature,layer)=>{
+                const name=feature.properties.PROVINSI,value=values.get(geoProvinceName(name))||0;
+                layer.bindTooltip(`<b>${escapeHtml(name)}</b><br>Omzet: ${idr(value)}`);
+                layer.on({mouseover:event=>event.target.setStyle({weight:2,color:'#334155',fillOpacity:1}),mouseout:event=>provinceLayer.resetStyle(event.target),click:()=>{const raw=data.options.provinces.find(province=>geoProvinceName(province)===geoProvinceName(name));if(raw){$('provinsi').value=raw;loadData(true);}}});
+            }}).addTo(provinceMap);
+            provinceMap.fitBounds(provinceLayer.getBounds(),{padding:[8,8]});
+            setTimeout(()=>provinceMap.invalidateSize(),60);
+        } catch(error) {$('provinceMap').textContent='Peta provinsi tidak dapat dimuat.';}
+    }
+    function renderSimulation(data) {
+        const select=$('simProvince'),current=select.value,provinces=data.insights.top_provinces;
+        select.innerHTML='<option value="__all__">Semua provinsi</option>'+provinces.map(row=>`<option value="${escapeHtml(row.name)}">${escapeHtml(row.name)}</option>`).join('');
+        if(current==='__all__'||provinces.some(row=>row.name===current))select.value=current;else select.value='__all__';
+        const cut=Math.min(100,Math.max(0,Number($('discountCut').value)||0)),drop=Math.min(100,Math.max(0,Number($('volumeDrop').value)||0));
+        const selected=select.value==='__all__'?provinces:provinces.filter(row=>row.name===select.value);
+        const totals=selected.reduce((sum,row)=>({revenue:sum.revenue+Number(row.revenue||0),orders:sum.orders+Number(row.orders||0),discount:sum.discount+Number(row.discount||0)}),{revenue:0,orders:0,discount:0});
+        const saved=totals.discount*cut/100,lostRevenue=totals.revenue*drop/100,lostOrders=totals.orders*drop/100,impact=saved-lostRevenue;
+        $('simulationResult').innerHTML=[['Omzet dasar',idr(totals.revenue)],['Pesanan dasar',count(totals.orders)],['Pesanan hilang (estimasi)',lostOrders.toLocaleString('id-ID',{maximumFractionDigits:1})],['Diskon dihemat',idr(saved)],['Estimasi omzet hilang',idr(lostRevenue)],['Dampak omzet estimasi',`${impact>=0?'+':''}${idr(impact)}`]].map(([label,value])=>`<div class="rounded-xl border border-slate-200 bg-slate-50 p-4"><p class="text-xs uppercase tracking-wide text-slate-500">${label}</p><p class="mt-1 text-lg font-bold ${label==='Dampak omzet estimasi'?(impact>=0?'text-emerald-700':'text-rose-700'):'text-slate-800'}">${value}</p></div>`).join('');
+    }
+    function renderProvinceView(data) {
+        const isRevenue=$('provinceMetric').value==='revenue';
+        const mapOption=$('provinceView').querySelector('option[value="map"]');
+        mapOption.hidden=!isRevenue; mapOption.disabled=!isRevenue;
+        if(!isRevenue && $('provinceView').value==='map') $('provinceView').value='chart';
+        const showMap=$('provinceView').value==='map';
+        $('provinceChartView').classList.toggle('hidden',showMap);
+        $('provinceMapView').classList.toggle('hidden',!showMap);
+        if(showMap)renderProvinceMap(data); else renderProvinceChart(data);
+    }
     function renderList(id, values, total) {
         $(id).innerHTML = values.length ? values.map(v => {
             const pct = total ? Math.min(100, v.count * 100 / total) : 0;
@@ -206,7 +256,8 @@
         const monthly = i.monthly;
         renderChart('monthlyChart', {type:'line',data:{labels:monthly.map(x=>x.month),datasets:[{label:'Omzet',data:monthly.map(x=>x.revenue),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',fill:true,tension:.25},{label:'Pesanan',data:monthly.map(x=>x.orders),borderColor:'#f97316',yAxisID:'y1',tension:.25}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},onClick:(event,elements,chart)=>{if(!elements.length)return;const month=chart.data.labels[elements[0].index];$('bulan_dari').value=month;$('bulan_sampai').value=month;loadData(true);setTimeout(()=>$('tableBody').closest('article').scrollIntoView({behavior:'smooth',block:'start'}),250);},plugins:{tooltip:{callbacks:{footer:()=> 'Klik titik untuk melihat transaksi bulan ini'}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'Rp '+Number(v).toLocaleString('id-ID')}},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false}}}}});
         renderComposition(data);
-        renderProvinceChart(data);
+        renderProvinceView(data);
+        renderSimulation(data);
         renderChart('categoryChart', {type:'bar',data:{labels:i.top_categories.map(x=>x.name),datasets:[{label:'Pesanan',data:i.top_categories.map(x=>x.count),backgroundColor:'#8b5cf6',borderRadius:5}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
         renderList('paymentList', i.payment_methods, i.orders);
         renderList('shippingList', i.shipping_methods, i.orders);
@@ -258,7 +309,10 @@
     }
     $('refresh').addEventListener('click', () => loadData(true));
     $('compositionField').addEventListener('change', () => { if (latest) renderComposition(latest); });
-    $('provinceMetric').addEventListener('change', () => { if (latest) renderProvinceChart(latest); });
+    $('provinceMetric').addEventListener('change', () => { if (latest) renderProvinceView(latest); });
+    $('provinceView').addEventListener('change', () => { if(latest)renderProvinceView(latest); });
+    $('simProvince').addEventListener('change', () => { if(latest)renderSimulation(latest); });
+    for(const id of ['discountCut','volumeDrop'])$(id).addEventListener('input',()=>{if(latest)renderSimulation(latest);});
     $('limit').addEventListener('change', () => loadData(true));
     for (const id of ['status','provinsi','subkategori','metode_pembayaran']) $(id).addEventListener('change', () => loadData(true));
     $('bulan_dari').addEventListener('change', () => { validateMonthRange('bulan_dari'); loadData(true); });
