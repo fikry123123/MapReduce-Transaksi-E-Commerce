@@ -48,6 +48,7 @@
         .kpi-card:after { content:""; pointer-events:none; position:absolute; width:130px; height:130px; right:-68px; top:-77px; border-radius:50%; background:radial-gradient(circle,rgba(96,165,250,.14),transparent 70%); }
         .kpi-card:hover { transform:translateY(-5px) perspective(800px) rotateX(2deg) scale(1.012); box-shadow:0 18px 30px rgba(31,73,133,.13),0 6px 12px rgba(31,73,133,.07); border-color:#c9dcf7!important; }
         .chart-wrap { animation:card-enter .65s both; }
+        .insight-item { border:1px solid #e5ebf4; border-radius:14px; padding:14px 16px; background:linear-gradient(145deg,#fff,#f8fbff); box-shadow:0 3px 10px rgba(15,35,70,.035); }
         @keyframes card-enter { from { opacity:0; transform:translateY(12px) scale(.99); } to { opacity:1; transform:translateY(0) scale(1); } }
         @keyframes panel-enter { from { opacity:0; transform:translateY(9px); } to { opacity:1; transform:translateY(0); } }
         @media (max-width:640px) { .panel { padding:16px; border-radius:17px; } .panel-heading h2 { font-size:15px; } .kpi-card { border-radius:15px; } .kpi-card:hover { transform:translateY(-2px); } }
@@ -91,7 +92,8 @@
             <div class="flex flex-wrap justify-between gap-2 mb-4 text-sm text-slate-500 px-1">
                 <span id="dataSummary"></span><span id="filterSummary"></span>
             </div>
-            <div id="kpis" class="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-7 gap-3 md:gap-4 mb-6"></div>
+            <div id="kpis" class="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-8 gap-3 md:gap-4 mb-2"></div>
+            <p class="text-xs text-slate-500 mb-6 px-1">Omzet bruto = pembayaran bersih + diskon pada pesanan tidak batal. Omzet bersih = Total Pembayaran untuk pesanan tidak batal. Nominal refund retur tidak tersedia pada sumber data.</p>
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-5 mb-6">
                 <article class="panel xl:col-span-2"><div class="panel-heading"><div><p class="eyebrow">PERFORMA DARI WAKTU KE WAKTU</p><h2>Tren omzet dan pesanan</h2></div><span class="chart-mark">01</span></div><div class="flex flex-wrap items-end gap-3 mb-4"><label class="text-xs font-medium text-slate-500">Bulan dari<select id="bulan_dari" class="filter-control mt-1 min-w-44"><option value="">Awal rentang</option></select></label><label class="text-xs font-medium text-slate-500">Bulan sampai<select id="bulan_sampai" class="filter-control mt-1 min-w-44"><option value="">Akhir rentang</option></select></label><button id="clearMonths" class="text-xs font-semibold text-blue-700 hover:text-blue-900 px-2 py-2">Hapus rentang</button></div><div class="h-80"><canvas id="monthlyChart"></canvas></div></article>
                 <article class="panel"><div class="panel-heading"><div><p class="eyebrow">KOMPOSISI</p><h2 id="compositionTitle">Pesanan per status</h2></div><span class="chart-mark">02</span></div><label class="block text-xs font-medium text-slate-500 mb-3">Kelompok data
@@ -105,6 +107,8 @@
                 <article class="panel xl:col-span-2"><div class="panel-heading"><div><p class="eyebrow">PRODUK</p><h2>Jumlah pesanan per kategori</h2></div><span class="chart-mark">04</span></div><div class="h-80"><canvas id="categoryChart"></canvas></div></article>
             </div>
             <article class="panel mb-6"><div class="panel-heading"><div><p class="eyebrow">SIMULASI WHAT-IF</p><h2>Simulasi dampak pengurangan diskon</h2></div><span class="chart-mark">05</span></div><p class="text-sm text-slate-500 mb-4">Pilih satu provinsi atau semua provinsi dari hasil filter dashboard. <b>Penurunan pesanan</b> adalah perkiraan jumlah order yang hilang; simulasi menganggap nilai rata-rata per order tetap sama. Hasil menunjukkan estimasi omzet, bukan laba karena data modal/COGS tidak tersedia.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><label class="text-xs font-medium text-slate-500">Cakupan daerah<select id="simProvince" class="filter-control mt-1"></select></label><label class="text-xs font-medium text-slate-500">Diskon dikurangi (%)<input id="discountCut" type="number" min="0" max="100" value="10" class="filter-control mt-1"></label><label class="text-xs font-medium text-slate-500">Perkiraan pesanan turun (%)<input id="volumeDrop" type="number" min="0" max="100" value="5" class="filter-control mt-1"></label></div><p class="mt-3 text-xs text-slate-400">Rumus: diskon yang dihemat − omzet yang hilang akibat perkiraan pesanan turun.</p><div id="simulationResult" class="grid grid-cols-1 md:grid-cols-3 2xl:grid-cols-6 gap-3 mt-5"></div></article>
+            <article class="panel mb-6"><div class="panel-heading"><div><p class="eyebrow">PERBANDINGAN PERIODE</p><h2>Bandingkan omzet bersih</h2></div><span class="chart-mark">06</span></div><div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-4"><label class="text-xs font-medium text-slate-500">Jenis perbandingan<select id="comparisonMode" class="filter-control mt-1"><option value="previous">Rentang vs periode sebelumnya</option><option value="months">Bandingkan dua bulan</option></select></label><label class="text-xs font-medium text-slate-500">Cakupan provinsi<select id="comparisonProvince" class="filter-control mt-1"><option value="">Semua provinsi</option></select></label><label id="comparisonMonthOneWrap" class="hidden text-xs font-medium text-slate-500">Bulan pertama<select id="comparisonMonthOne" class="filter-control mt-1"><option value="">Pilih bulan</option></select></label><label id="comparisonMonthTwoWrap" class="hidden text-xs font-medium text-slate-500">Bulan kedua<select id="comparisonMonthTwo" class="filter-control mt-1"><option value="">Pilih bulan</option></select></label></div><div id="comparisonSummary" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div><p id="comparisonLabel" class="text-xs text-slate-500 mt-3"></p></article>
+            <article class="panel mb-6"><div class="panel-heading"><div><p class="eyebrow">RINGKASAN ANOMALI & TINDAKAN</p><h2>Hal yang perlu diperhatikan</h2></div></div><div id="anomalyList" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div></article>
             <article class="panel mb-6"><div class="panel-heading mb-1"><div><p class="eyebrow">JELAJAHI PRODUK</p><h2>Kategori dan subkategori</h2></div></div><p class="text-sm text-slate-500 mb-5">Pilih kategori induk untuk melihat semua jenis di dalamnya, atau klik subkategori untuk memfilter lebih spesifik.</p><div id="categorySections" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div></article>
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
                 <article class="panel"><div class="panel-heading"><div><p class="eyebrow">PEMBAYARAN</p><h2>Metode pembayaran</h2></div></div><div id="paymentList" class="space-y-3"></div></article>
@@ -118,6 +122,7 @@
                             <input id="tableSearch" type="search" class="filter-control mt-1 min-w-64" placeholder="Cari di semua kolom tabel...">
                         </label>
                         <div class="flex flex-col sm:flex-row sm:items-end gap-3 xl:justify-end">
+                            <button id="exportCsv" class="page-button">Ekspor CSV</button>
                             <div class="flex items-center justify-between sm:justify-end gap-2"><button id="previous" class="page-button">← Sebelumnya</button><span id="pageInfo" class="min-w-32 text-center text-xs text-slate-500"></span><button id="next" class="page-button">Berikutnya →</button></div>
                         </div>
                     </div>
@@ -283,10 +288,12 @@
     function renderInsights(data) {
         const i = data.insights;
         const cards = [
-            ['Pesanan', count(i.orders)], ['Total omzet', idr(i.revenue)], ['Rata-rata nilai pesanan', idr(i.average_order_value)],
+            ['Pesanan', count(i.orders)], ['Omzet bruto estimasi', idr(i.gross_revenue)], ['Omzet bersih terbayar', idr(i.revenue)], ['Rata-rata nilai pesanan', idr(i.average_order_value)],
             ['Jumlah produk', count(i.items)], ['Produk dikembalikan', count(i.returned_items)], ['Transaksi tertinggi', idr(i.highest_order_value)], ['Pesanan batal', `${count(i.cancelled_orders)} (${i.cancellation_rate}%)`]
         ];
         $('kpis').innerHTML = cards.map(([label, value], index) => `<article class="kpi-card p-4 md:p-5 min-w-0" style="--delay:${index*55}ms"><p class="text-[10px] md:text-xs uppercase tracking-[.12em] text-slate-500 font-semibold relative z-[1]">${label}</p><p class="text-base md:text-xl font-bold tracking-tight text-slate-800 mt-2 break-words relative z-[1]">${value}</p></article>`).join('');
+        renderComparison(data.comparison);
+        renderAnomalies(data.anomalies);
         const monthly = i.monthly;
         renderChart('monthlyChart', {type:'line',data:{labels:monthly.map(x=>x.month),datasets:[{label:'Omzet',data:monthly.map(x=>x.revenue),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',fill:true,tension:.25},{label:'Pesanan',data:monthly.map(x=>x.orders),borderColor:'#f97316',yAxisID:'y1',tension:.25}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},onClick:(event,elements,chart)=>{if(!elements.length)return;const month=chart.data.labels[elements[0].index];$('bulan_dari').value=month;$('bulan_sampai').value=month;loadData(true);setTimeout(()=>$('tableBody').closest('article').scrollIntoView({behavior:'smooth',block:'start'}),250);},plugins:{tooltip:{callbacks:{footer:()=> 'Klik titik untuk melihat transaksi bulan ini'}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'Rp '+Number(v).toLocaleString('id-ID')}},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false}}}}});
         renderComposition(data);
@@ -296,6 +303,21 @@
         renderList('paymentList', i.payment_methods, i.orders);
         renderList('shippingList', i.shipping_methods, i.orders);
         renderCategorySections(i.category_groups);
+    }
+    function renderComparison(c) {
+        const change = c.change_pct;
+        const tone = change === null ? 'text-slate-600' : change >= 0 ? 'text-emerald-700' : 'text-rose-700';
+        const sign = change !== null && change > 0 ? '+' : '';
+        const values = [
+            [c.mode === 'months' ? `Omzet ${c.current_month}` : 'Periode aktif', idr(c.current)], [c.mode === 'months' ? `Omzet ${c.previous_month}` : 'Periode sebelumnya', idr(c.previous)],
+            ['Selisih', `<span class="${tone}">${change === null ? 'Belum ada pembanding' : `${sign}${idr(c.delta)} (${sign}${change}%)`}</span>`]
+        ];
+        $('comparisonSummary').innerHTML = values.map(([label,value])=>`<div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4"><p class="text-xs uppercase tracking-wide text-slate-500">${label}</p><p class="mt-1 text-lg font-bold text-slate-800">${value}</p></div>`).join('');
+        $('comparisonLabel').textContent = `Omzet bersih terbayar · ${c.label} · ${c.province || 'Semua provinsi'}`;
+    }
+    function renderAnomalies(items) {
+        const styles = {warning:'border-amber-200 bg-amber-50/70',positive:'border-emerald-200 bg-emerald-50/70',info:'border-blue-200 bg-blue-50/60'};
+        $('anomalyList').innerHTML = items.length ? items.map(item=>`<article class="insight-item ${styles[item.level]||styles.info}"><h3 class="font-semibold text-slate-800">${escapeHtml(item.title)}</h3><p class="text-sm text-slate-600 mt-1">${escapeHtml(item.detail)}</p><p class="text-sm text-slate-700 mt-2"><b>Tindakan:</b> ${escapeHtml(item.action)}</p></article>`).join('') : '<p class="text-sm text-slate-500">Belum ada pola yang cukup untuk diringkas pada hasil filter ini.</p>';
     }
     function renderTable(data) {
         $('tableHead').innerHTML = '<tr><th class="text-left px-3 py-3 font-semibold border-b">NO.</th>' + data.headers.map(h=>`<th class="text-left px-3 py-3 font-semibold border-b">${escapeHtml(h)}</th>`).join('') + '</tr>' +
@@ -324,6 +346,12 @@
         $('loading').classList.remove('hidden'); $('error').classList.add('hidden'); $('refresh').disabled = true;
         const params = new URLSearchParams({limit:$('limit').value, offset:String(offset)});
         for (const id of ['tableSearch','status','provinsi','kategori','subkategori','metode_pembayaran','bulan_dari','bulan_sampai']) if ($(id).value.trim()) params.set(id === 'tableSearch' ? 'q' : id, $(id).value.trim());
+        if ($('comparisonProvince').value) params.set('comparison_province', $('comparisonProvince').value);
+        params.set('comparison_mode', $('comparisonMode').value);
+        if ($('comparisonMode').value === 'months') {
+            params.set('bulan_perbandingan_1', $('comparisonMonthOne').value);
+            params.set('bulan_perbandingan_2', $('comparisonMonthTwo').value);
+        }
         for (const [column, value] of Object.entries(exactColumnFilters)) if (value) params.set('col_exact_' + column, value);
         if (sortColumn) { params.set('sort_column', sortColumn); params.set('sort_direction', sortDirection); }
         try {
@@ -336,12 +364,36 @@
             fillSelect('status', data.options.statuses, 'Semua status'); fillSelect('provinsi', data.options.provinces, 'Semua provinsi');
             fillSelect('kategori', data.options.categories, 'Semua kategori'); categoryGroups = data.options.category_groups; updateSubcategoryOptions(); fillSelect('metode_pembayaran', data.options.payment_methods, 'Semua metode bayar');
             fillSelect('bulan_dari', data.options.months, 'Pilih bulan awal'); fillSelect('bulan_sampai', data.options.months, 'Pilih bulan akhir'); validateMonthRange();
+            fillSelect('comparisonMonthOne', data.options.months, 'Pilih bulan'); fillSelect('comparisonMonthTwo', data.options.months, 'Pilih bulan');
+            fillSelect('comparisonProvince', data.options.provinces, 'Semua provinsi');
             renderInsights(data); renderTable(data);
         } catch (error) {
             $('error').textContent = error.message; $('error').classList.remove('hidden');
         } finally { $('loading').classList.add('hidden'); $('refresh').disabled = false; }
     }
+    function exportCsv() {
+        const params = new URLSearchParams();
+        for (const id of ['tableSearch','status','provinsi','kategori','subkategori','metode_pembayaran','bulan_dari','bulan_sampai']) if ($(id).value.trim()) params.set(id === 'tableSearch' ? 'q' : id, $(id).value.trim());
+        for (const [column, value] of Object.entries(exactColumnFilters)) if (value) params.set('col_exact_' + column, value);
+        window.location.href = '/api/export.csv?' + params.toString();
+    }
     $('refresh').addEventListener('click', () => loadData(true));
+    $('exportCsv').addEventListener('click', exportCsv);
+    $('comparisonProvince').addEventListener('change', () => loadData(true));
+    function updateComparisonMode() {
+        const manual = $('comparisonMode').value === 'months';
+        $('comparisonMonthOneWrap').classList.toggle('hidden', !manual);
+        $('comparisonMonthTwoWrap').classList.toggle('hidden', !manual);
+        if (manual && latest) {
+            const months = latest.options.months;
+            if (!$('comparisonMonthOne').value) $('comparisonMonthOne').value = months[months.length - 1] || '';
+            if (!$('comparisonMonthTwo').value) $('comparisonMonthTwo').value = months[months.length - 2] || '';
+        }
+        if (latest) loadData(true);
+    }
+    $('comparisonMode').addEventListener('change', updateComparisonMode);
+    $('comparisonMonthOne').addEventListener('change', () => loadData(true));
+    $('comparisonMonthTwo').addEventListener('change', () => loadData(true));
     $('compositionField').addEventListener('change', () => { if (latest) renderComposition(latest); });
     $('provinceMetric').addEventListener('change', () => { if (latest) renderProvinceView(latest); });
     $('provinceView').addEventListener('change', () => { if(latest)renderProvinceView(latest); });
