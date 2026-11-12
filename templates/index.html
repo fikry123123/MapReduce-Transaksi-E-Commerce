@@ -9,17 +9,20 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
+        :root { --ink:#172033; --muted:#718096; --line:#e5ebf4; --blue:#2563eb; --blue-soft:#eff6ff; --surface-shadow:0 8px 24px rgba(15,35,70,.055),0 2px 5px rgba(15,35,70,.035); --surface-shadow-hover:0 20px 42px rgba(25,58,107,.12),0 7px 16px rgba(25,58,107,.07); }
         * { scrollbar-color: #cbd5e1 transparent; scrollbar-width: thin; }
-        .filter-control { width:100%; min-width:0; border:1px solid #e2e8f0; border-radius:12px; background:#fff; color:#1e293b; padding:11px 13px; font-size:13px; outline:none; transition:box-shadow .18s,border-color .18s; }
-        .filter-control:focus { border-color:#93c5fd; box-shadow:0 0 0 3px rgba(147,197,253,.28); }
+        body { background-image:radial-gradient(ellipse at 12% 0%,rgba(219,234,254,.48),transparent 34%),radial-gradient(ellipse at 94% 25%,rgba(224,231,255,.38),transparent 30%); }
+        .filter-control { width:100%; min-width:0; border:1px solid #e2e8f0; border-radius:12px; background:#fff; color:#1e293b; padding:11px 13px; font-size:13px; outline:none; box-shadow:0 2px 5px rgba(15,35,70,.025); transition:box-shadow .2s,border-color .2s,transform .2s; }
+        .filter-control:focus { border-color:#93c5fd; box-shadow:0 0 0 3px rgba(147,197,253,.28),0 4px 12px rgba(37,99,235,.08); transform:translateY(-1px); }
         .filter-control:disabled { background:#f1f5f9; color:#94a3b8; cursor:not-allowed; }
-        .panel { background:#fff; border:1px solid #e7edf5; border-radius:20px; padding:20px; box-shadow:0 5px 20px rgba(15,23,42,.035); }
+        .panel { position:relative; background:linear-gradient(145deg,rgba(255,255,255,.99),rgba(250,252,255,.96)); border:1px solid rgba(226,234,245,.95); border-radius:22px; padding:20px; box-shadow:var(--surface-shadow); transform:translateY(0) perspective(1000px) rotateX(0); transition:transform .28s cubic-bezier(.2,.75,.25,1),box-shadow .28s,border-color .28s; animation:panel-enter .55s both; }
+        .panel:hover { transform:translateY(-3px) perspective(1000px) rotateX(.25deg); box-shadow:var(--surface-shadow-hover); border-color:#d5e2f5; }
         .panel-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
         .panel-heading h2 { font-size:17px; font-weight:700; letter-spacing:-.02em; color:#172033; }
         .eyebrow { color:#94a3b8; font-size:10px; font-weight:700; letter-spacing:.14em; margin-bottom:4px; }
-        .chart-mark { display:grid; place-items:center; width:30px; height:30px; border-radius:10px; background:#eff6ff; color:#2563eb; font-size:11px; font-weight:700; }
-        .page-button { border:1px solid #e2e8f0; background:white; border-radius:10px; padding:9px 13px; font-size:13px; font-weight:600; color:#334155; transition:background .15s; }
-        .page-button:hover:not(:disabled) { background:#f1f5f9; }
+        .chart-mark { display:grid; place-items:center; width:32px; height:32px; border:1px solid #dbeafe; border-radius:11px; background:linear-gradient(145deg,#fff,#eaf2ff); color:#2563eb; font-size:11px; font-weight:800; box-shadow:0 3px 7px rgba(37,99,235,.08); }
+        .page-button { border:1px solid #dce5f1; background:linear-gradient(180deg,#fff,#f8faff); border-radius:11px; padding:9px 13px; font-size:13px; font-weight:600; color:#334155; box-shadow:0 2px 4px rgba(15,35,70,.04); transition:transform .18s,box-shadow .18s,background .18s; }
+        .page-button:hover:not(:disabled) { background:#f1f6ff; transform:translateY(-2px); box-shadow:0 7px 14px rgba(15,35,70,.09); }
         .page-button:disabled { opacity:.4; cursor:not-allowed; }
         #tableHead th { background:#f8fafc; color:#64748b; text-transform:uppercase; letter-spacing:.06em; font-size:10px; }
         #tableHead th, #tableBody td { padding:12px 14px; border-bottom:1px solid #eef2f7; }
@@ -40,7 +43,15 @@
         #tableBody tr:nth-child(even) td:first-child { background:#fbfdff; }
         #tableBody tr:hover td:first-child { background:#eff6ff; }
         #provinceMap { height:480px; border-radius:16px; background:#eff6ff; z-index:1; }
-        @media (max-width:640px) { .panel { padding:16px; border-radius:16px; } .panel-heading h2 { font-size:15px; } }
+        .kpi-card { position:relative; overflow:hidden; border:1px solid #e1eaf5!important; border-left:1px solid #e1eaf5!important; border-radius:19px; background:linear-gradient(150deg,#fff 4%,#fbfdff 72%,#f3f7ff 100%); box-shadow:0 7px 17px rgba(27,57,96,.055),0 2px 3px rgba(27,57,96,.04); transform:translateY(0) rotateX(0); transform-style:preserve-3d; transition:transform .32s cubic-bezier(.2,.75,.25,1),box-shadow .32s,border-color .32s; animation:card-enter .55s both; animation-delay:var(--delay,0ms); }
+        .kpi-card:before { content:""; position:absolute; inset:0 0 auto; height:3px; background:linear-gradient(90deg,#2563eb,#60a5fa,#bfdbfe); opacity:.88; }
+        .kpi-card:after { content:""; pointer-events:none; position:absolute; width:130px; height:130px; right:-68px; top:-77px; border-radius:50%; background:radial-gradient(circle,rgba(96,165,250,.14),transparent 70%); }
+        .kpi-card:hover { transform:translateY(-5px) perspective(800px) rotateX(2deg) scale(1.012); box-shadow:0 18px 30px rgba(31,73,133,.13),0 6px 12px rgba(31,73,133,.07); border-color:#c9dcf7!important; }
+        .chart-wrap { animation:card-enter .65s both; }
+        @keyframes card-enter { from { opacity:0; transform:translateY(12px) scale(.99); } to { opacity:1; transform:translateY(0) scale(1); } }
+        @keyframes panel-enter { from { opacity:0; transform:translateY(9px); } to { opacity:1; transform:translateY(0); } }
+        @media (max-width:640px) { .panel { padding:16px; border-radius:17px; } .panel-heading h2 { font-size:15px; } .kpi-card { border-radius:15px; } .kpi-card:hover { transform:translateY(-2px); } }
+        @media (prefers-reduced-motion:reduce) { *,*:before,*:after { animation-duration:.01ms!important; animation-iteration-count:1!important; scroll-behavior:auto!important; transition-duration:.01ms!important; } }
     </style>
 </head>
 <body class="bg-[#f4f7fb] text-slate-800 antialiased">
@@ -153,6 +164,30 @@
     }
     function renderChart(id, config) {
         if (charts[id]) charts[id].destroy();
+        Chart.defaults.font.family = 'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
+        Chart.defaults.color = '#64748b';
+        Chart.defaults.animation.duration = 760;
+        Chart.defaults.animation.easing = 'easeOutQuart';
+        Chart.defaults.plugins.legend.labels.usePointStyle = true;
+        Chart.defaults.plugins.legend.labels.boxWidth = 9;
+        Chart.defaults.plugins.legend.labels.padding = 16;
+        Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15,23,42,.94)';
+        Chart.defaults.plugins.tooltip.titleFont = {weight:'700'};
+        Chart.defaults.plugins.tooltip.padding = 11;
+        Chart.defaults.plugins.tooltip.cornerRadius = 10;
+        Chart.defaults.scale.grid.color = 'rgba(148,163,184,.16)';
+        Chart.defaults.scale.grid.drawTicks = false;
+        Chart.defaults.scale.border.display = false;
+        Chart.defaults.scale.ticks.font = {size:10,weight:'500'};
+        Chart.defaults.elements.line.borderWidth = 3;
+        Chart.defaults.elements.line.tension = .28;
+        Chart.defaults.elements.point.radius = 2;
+        Chart.defaults.elements.point.hoverRadius = 6;
+        Chart.defaults.elements.bar.borderRadius = 7;
+        Chart.defaults.elements.arc.borderWidth = 3;
+        Chart.defaults.elements.arc.hoverOffset = 8;
+        config.options = config.options || {};
+        config.options.animation = {duration:760,easing:'easeOutQuart',...(config.options.animation||{})};
         charts[id] = new Chart($(id), config);
     }
     function renderComposition(data) {
@@ -251,8 +286,7 @@
             ['Pesanan', count(i.orders)], ['Total omzet', idr(i.revenue)], ['Rata-rata nilai pesanan', idr(i.average_order_value)],
             ['Jumlah produk', count(i.items)], ['Produk dikembalikan', count(i.returned_items)], ['Transaksi tertinggi', idr(i.highest_order_value)], ['Pesanan batal', `${count(i.cancelled_orders)} (${i.cancellation_rate}%)`]
         ];
-        const accents = ['border-blue-500','border-violet-500','border-cyan-500','border-emerald-500','border-amber-500','border-rose-500'];
-        $('kpis').innerHTML = cards.map(([label, value], index) => `<article class="bg-white rounded-2xl border border-slate-200/80 border-l-4 ${accents[index]} shadow-sm p-4 md:p-5 min-w-0"><p class="text-[10px] md:text-xs uppercase tracking-[.12em] text-slate-500 font-semibold">${label}</p><p class="text-base md:text-xl font-bold tracking-tight text-slate-800 mt-2 break-words">${value}</p></article>`).join('');
+        $('kpis').innerHTML = cards.map(([label, value], index) => `<article class="kpi-card p-4 md:p-5 min-w-0" style="--delay:${index*55}ms"><p class="text-[10px] md:text-xs uppercase tracking-[.12em] text-slate-500 font-semibold relative z-[1]">${label}</p><p class="text-base md:text-xl font-bold tracking-tight text-slate-800 mt-2 break-words relative z-[1]">${value}</p></article>`).join('');
         const monthly = i.monthly;
         renderChart('monthlyChart', {type:'line',data:{labels:monthly.map(x=>x.month),datasets:[{label:'Omzet',data:monthly.map(x=>x.revenue),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',fill:true,tension:.25},{label:'Pesanan',data:monthly.map(x=>x.orders),borderColor:'#f97316',yAxisID:'y1',tension:.25}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},onClick:(event,elements,chart)=>{if(!elements.length)return;const month=chart.data.labels[elements[0].index];$('bulan_dari').value=month;$('bulan_sampai').value=month;loadData(true);setTimeout(()=>$('tableBody').closest('article').scrollIntoView({behavior:'smooth',block:'start'}),250);},plugins:{tooltip:{callbacks:{footer:()=> 'Klik titik untuk melihat transaksi bulan ini'}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'Rp '+Number(v).toLocaleString('id-ID')}},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false}}}}});
         renderComposition(data);
