@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insight Transaksi E-Commerce</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <main class="max-w-screen-2xl mx-auto p-4 md:p-8">
+        <header class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+            <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
+                <div>
+                    <p class="text-sm font-semibold text-blue-600 mb-1">DASHBOARD ANALITIK</p>
+                    <h1 class="text-2xl md:text-3xl font-bold">Insight Transaksi E-Commerce</h1>
+                    <p class="text-slate-500 mt-2">Jelajahi seluruh data dengan filter dan ambil baris bertahap agar tabel tetap ringan.</p>
+                </div>
+                <div class="flex flex-wrap items-end gap-3">
+                    <label class="text-sm">Jumlah baris
+                        <select id="limit" class="mt-1 block rounded-lg border-slate-300 border px-3 py-2 bg-white">
+                            <option>25</option><option selected>100</option><option>250</option><option>500</option><option>1000</option>
+                        </select>
+                    </label>
+                    <button id="refresh" class="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 font-semibold">Muat data</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 mt-6">
+                <input id="q" class="rounded-lg border border-slate-300 px-3 py-2" placeholder="Cari di semua kolom...">
+                <select id="status" class="rounded-lg border border-slate-300 px-3 py-2"><option value="">Semua status</option></select>
+                <select id="provinsi" class="rounded-lg border border-slate-300 px-3 py-2"><option value="">Semua provinsi</option></select>
+                <select id="kategori" class="rounded-lg border border-slate-300 px-3 py-2"><option value="">Semua kategori</option></select>
+                <select id="metode_pembayaran" class="rounded-lg border border-slate-300 px-3 py-2"><option value="">Semua metode bayar</option></select>
+            </div>
+        </header>
+
+        <div id="error" class="hidden rounded-xl bg-red-50 border border-red-200 text-red-700 p-4 mb-5"></div>
+        <div id="loading" class="text-slate-500 py-8 text-center">Memuat data dan menghitung insight...</div>
+        <section id="dashboard" class="hidden">
+            <div class="flex flex-wrap justify-between gap-2 mb-3 text-sm text-slate-500">
+                <span id="dataSummary"></span><span id="filterSummary"></span>
+            </div>
+            <div id="kpis" class="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-4 mb-6"></div>
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
+                <article class="bg-white rounded-xl border border-slate-200 shadow-sm p-5"><h2 class="font-bold mb-3">Tren omzet per bulan</h2><div class="h-72"><canvas id="monthlyChart"></canvas></div></article>
+                <article class="bg-white rounded-xl border border-slate-200 shadow-sm p-5"><h2 class="font-bold mb-3">Jumlah pesanan per status</h2><div class="h-72"><canvas id="statusChart"></canvas></div></article>
+                <article class="bg-white rounded-xl border border-slate-200 shadow-sm p-5"><h2 class="font-bold mb-3">10 provinsi dengan omzet tertinggi</h2><div class="h-72"><canvas id="provinceChart"></canvas></div></article>
+                <article class="bg-white rounded-xl border border-slate-200 shadow-sm p-5"><h2 class="font-bold mb-3">Kategori produk teratas</h2><div class="h-72"><canvas id="categoryChart"></canvas></div></article>
+            </div>
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
+                <article class="bg-white rounded-xl border border-slate-200 shadow-sm p-5"><h2 class="font-bold mb-3">Metode pembayaran</h2><div id="paymentList" class="space-y-2"></div></article>
+                <article class="bg-white rounded-xl border border-slate-200 shadow-sm p-5"><h2 class="font-bold mb-3">Opsi pengiriman teratas</h2><div id="shippingList" class="space-y-2"></div></article>
+            </div>
+            <article class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-5 flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
+                    <div><h2 class="font-bold">Semua kolom transaksi</h2><p class="text-sm text-slate-500">Menampilkan halaman data sesuai pilihan jumlah baris.</p></div>
+                    <div class="flex gap-2"><button id="previous" class="px-4 py-2 rounded-lg border disabled:opacity-40">Sebelumnya</button><span id="pageInfo" class="px-2 py-2 text-sm text-slate-600"></span><button id="next" class="px-4 py-2 rounded-lg border disabled:opacity-40">Berikutnya</button></div>
+                </div>
+                <div class="overflow-auto max-h-[70vh] border-t border-slate-200">
+                    <table class="min-w-full text-sm whitespace-nowrap"><thead id="tableHead" class="sticky top-0 bg-slate-100 z-10"></thead><tbody id="tableBody" class="divide-y divide-slate-100"></tbody></table>
+                </div>
+            </article>
+        </section>
+    </main>
+<script>
+    let offset = 0, latest = null, charts = {};
+    const $ = (id) => document.getElementById(id);
+    const idr = (n) => 'Rp ' + Number(n || 0).toLocaleString('id-ID', {maximumFractionDigits: 0});
+    const count = (n) => Number(n || 0).toLocaleString('id-ID');
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    function fillSelect(id, values, placeholder) {
+        const select = $(id), current = select.value;
+        select.innerHTML = `<option value="">${placeholder}</option>` + values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+        select.value = current;
+    }
+    function renderChart(id, config) {
+        if (charts[id]) charts[id].destroy();
+        charts[id] = new Chart($(id), config);
+    }
+    function renderList(id, values, total) {
+        $(id).innerHTML = values.length ? values.map(v => {
+            const pct = total ? Math.min(100, v.count * 100 / total) : 0;
+            return `<div><div class="flex justify-between gap-3 text-sm"><span class="truncate" title="${escapeHtml(v.name)}">${escapeHtml(v.name)}</span><b>${count(v.count)} <span class="font-normal text-slate-500">(${pct.toFixed(1)}%)</span></b></div><div class="h-1.5 bg-slate-100 rounded mt-1"><div class="h-1.5 bg-blue-500 rounded" style="width:${pct}%"></div></div></div>`;
+        }).join('') : '<p class="text-sm text-slate-500">Tidak ada data.</p>';
+    }
+    function renderInsights(data) {
+        const i = data.insights;
+        const cards = [
+            ['Pesanan', count(i.orders)], ['Total omzet', idr(i.revenue)], ['Rata-rata nilai pesanan', idr(i.average_order_value)],
+            ['Jumlah produk', count(i.items)], ['Produk dikembalikan', count(i.returned_items)], ['Pesanan batal', `${count(i.cancelled_orders)} (${i.cancellation_rate}%)`]
+        ];
+        $('kpis').innerHTML = cards.map(([label, value]) => `<article class="bg-white rounded-xl border border-slate-200 shadow-sm p-4"><p class="text-xs uppercase tracking-wide text-slate-500">${label}</p><p class="text-lg font-bold mt-1 break-words">${value}</p></article>`).join('');
+        const monthly = i.monthly;
+        renderChart('monthlyChart', {type:'line',data:{labels:monthly.map(x=>x.month),datasets:[{label:'Omzet',data:monthly.map(x=>x.revenue),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',fill:true,tension:.25},{label:'Pesanan',data:monthly.map(x=>x.orders),borderColor:'#f97316',yAxisID:'y1',tension:.25}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{y:{beginAtZero:true,ticks:{callback:v=>'Rp '+Number(v).toLocaleString('id-ID')}},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false}}}}});
+        renderChart('statusChart', {type:'doughnut',data:{labels:i.statuses.map(x=>x.name),datasets:[{data:i.statuses.map(x=>x.count),backgroundColor:['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#64748b']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+        renderChart('provinceChart', {type:'bar',data:{labels:i.top_provinces.map(x=>x.name),datasets:[{label:'Omzet',data:i.top_provinces.map(x=>x.revenue),backgroundColor:'#3b82f6',borderRadius:5}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>'Rp '+Number(v).toLocaleString('id-ID')}}}}});
+        renderChart('categoryChart', {type:'bar',data:{labels:i.top_categories.map(x=>x.name),datasets:[{label:'Pesanan',data:i.top_categories.map(x=>x.count),backgroundColor:'#8b5cf6',borderRadius:5}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+        renderList('paymentList', i.payment_methods, i.orders);
+        renderList('shippingList', i.shipping_methods, i.orders);
+    }
+    function renderTable(data) {
+        $('tableHead').innerHTML = '<tr>' + data.headers.map(h=>`<th class="text-left px-3 py-3 font-semibold border-b">${escapeHtml(h)}</th>`).join('') + '</tr>';
+        $('tableBody').innerHTML = data.rows.map(row=>'<tr class="hover:bg-blue-50">'+data.headers.map(h=>`<td class="px-3 py-2">${escapeHtml(row[h])}</td>`).join('')+'</tr>').join('');
+        $('pageInfo').textContent = data.filtered_rows ? `Baris ${count(data.offset+1)}–${count(data.offset+data.rows.length)} dari ${count(data.filtered_rows)}` : 'Tidak ada baris';
+        $('previous').disabled = data.offset <= 0;
+        $('next').disabled = data.offset + data.limit >= data.filtered_rows;
+    }
+    async function loadData(reset = false) {
+        if (reset) offset = 0;
+        $('loading').classList.remove('hidden'); $('error').classList.add('hidden'); $('refresh').disabled = true;
+        const params = new URLSearchParams({limit:$('limit').value, offset:String(offset)});
+        for (const id of ['q','status','provinsi','kategori','metode_pembayaran']) if ($(id).value.trim()) params.set(id, $(id).value.trim());
+        try {
+            const response = await fetch('/api/data?' + params.toString());
+            const data = await response.json();
+            if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Gagal memuat data.');
+            latest = data; $('dashboard').classList.remove('hidden');
+            $('dataSummary').textContent = `${count(data.total_rows)} total baris tersedia`;
+            $('filterSummary').textContent = `${count(data.filtered_rows)} baris sesuai filter · insight dihitung dari hasil filter`;
+            fillSelect('status', data.options.statuses, 'Semua status'); fillSelect('provinsi', data.options.provinces, 'Semua provinsi');
+            fillSelect('kategori', data.options.categories, 'Semua kategori'); fillSelect('metode_pembayaran', data.options.payment_methods, 'Semua metode bayar');
+            renderInsights(data); renderTable(data);
+        } catch (error) {
+            $('error').textContent = error.message; $('error').classList.remove('hidden');
+        } finally { $('loading').classList.add('hidden'); $('refresh').disabled = false; }
+    }
+    $('refresh').addEventListener('click', () => loadData(true));
+    $('limit').addEventListener('change', () => loadData(true));
+    for (const id of ['status','provinsi','kategori','metode_pembayaran']) $(id).addEventListener('change', () => loadData(true));
+    let searchTimer;
+    $('q').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => loadData(true), 300); });
+    $('previous').addEventListener('click', () => { if (latest) { offset = Math.max(0, offset - latest.limit); loadData(); } });
+    $('next').addEventListener('click', () => { if (latest) { offset += latest.limit; loadData(); } });
+    loadData();
+</script>
+</body>
+</html>
