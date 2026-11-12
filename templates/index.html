@@ -6,64 +6,114 @@
     <title>Insight Transaksi E-Commerce</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { scrollbar-color: #cbd5e1 transparent; scrollbar-width: thin; }
+        .filter-control { width:100%; min-width:0; border:1px solid #e2e8f0; border-radius:12px; background:#fff; color:#1e293b; padding:11px 13px; font-size:13px; outline:none; transition:box-shadow .18s,border-color .18s; }
+        .filter-control:focus { border-color:#93c5fd; box-shadow:0 0 0 3px rgba(147,197,253,.28); }
+        .filter-control:disabled { background:#f1f5f9; color:#94a3b8; cursor:not-allowed; }
+        .panel { background:#fff; border:1px solid #e7edf5; border-radius:20px; padding:20px; box-shadow:0 5px 20px rgba(15,23,42,.035); }
+        .panel-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+        .panel-heading h2 { font-size:17px; font-weight:700; letter-spacing:-.02em; color:#172033; }
+        .eyebrow { color:#94a3b8; font-size:10px; font-weight:700; letter-spacing:.14em; margin-bottom:4px; }
+        .chart-mark { display:grid; place-items:center; width:30px; height:30px; border-radius:10px; background:#eff6ff; color:#2563eb; font-size:11px; font-weight:700; }
+        .page-button { border:1px solid #e2e8f0; background:white; border-radius:10px; padding:9px 13px; font-size:13px; font-weight:600; color:#334155; transition:background .15s; }
+        .page-button:hover:not(:disabled) { background:#f1f5f9; }
+        .page-button:disabled { opacity:.4; cursor:not-allowed; }
+        #tableHead th { background:#f8fafc; color:#64748b; text-transform:uppercase; letter-spacing:.06em; font-size:10px; }
+        #tableHead th, #tableBody td { padding:12px 14px; border-bottom:1px solid #eef2f7; }
+        #tableBody td { color:#475569; }
+        #tableBody tr { transition:background .12s ease; }
+        #tableBody tr:nth-child(even) { background:#fbfdff; }
+        #tableBody tr:hover { background:#eff6ff; }
+        #tableHead th:first-child { position:sticky; left:0; z-index:20; box-shadow:1px 0 0 #e2e8f0; }
+        #tableHead .column-filter-cell { padding:6px 8px; background:#fff; top:41px; z-index:11; }
+        .column-filter-input { width:150px; border:1px solid #e2e8f0; border-radius:8px; padding:7px 9px; color:#334155; font-size:11px; outline:none; }
+        .column-filter-input:focus { border-color:#60a5fa; box-shadow:0 0 0 2px rgba(96,165,250,.18); }
+        #tableHead .column-filter-cell:first-child { left:0; z-index:21; }
+        #tableHead .column-sort-cell { padding:6px 8px; background:#fff; top:41px; z-index:11; }
+        .column-sort-select { width:140px; border:1px solid #e2e8f0; border-radius:8px; padding:7px 9px; color:#475569; font-size:11px; background:#fff; outline:none; }
+        .column-sort-select:focus { border-color:#60a5fa; box-shadow:0 0 0 2px rgba(96,165,250,.18); }
+        #tableHead .column-sort-cell:first-child { left:0; z-index:21; }
+        #tableBody td:first-child { position:sticky; left:0; z-index:5; background:#fff; font-weight:600; color:#1e40af; box-shadow:1px 0 0 #eef2f7; }
+        #tableBody tr:nth-child(even) td:first-child { background:#fbfdff; }
+        #tableBody tr:hover td:first-child { background:#eff6ff; }
+        @media (max-width:640px) { .panel { padding:16px; border-radius:16px; } .panel-heading h2 { font-size:15px; } }
+    </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
-    <main class="max-w-screen-2xl mx-auto p-4 md:p-8">
-        <header class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+<body class="bg-[#f4f7fb] text-slate-800 antialiased">
+    <main class="max-w-[1600px] mx-auto p-4 md:p-7 xl:p-9">
+        <header class="bg-gradient-to-br from-slate-950 via-blue-950 to-blue-800 text-white rounded-3xl shadow-xl shadow-blue-950/10 p-6 md:p-8 mb-7 overflow-hidden relative">
+            <div class="absolute -right-20 -top-28 w-96 h-96 rounded-full bg-blue-400/10 blur-3xl pointer-events-none"></div>
             <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
-                <div>
-                    <p class="text-sm font-semibold text-blue-600 mb-1">DASHBOARD ANALITIK</p>
-                    <h1 class="text-2xl md:text-3xl font-bold">Insight Transaksi E-Commerce</h1>
-                    <p class="text-slate-500 mt-2">Jelajahi seluruh data dengan filter dan ambil baris bertahap agar tabel tetap ringan.</p>
+                <div class="relative">
+                    <p class="text-xs font-bold tracking-[.22em] text-blue-200 mb-2">DASHBOARD ANALITIK</p>
+                    <h1 class="text-2xl md:text-4xl font-bold tracking-tight">Insight Transaksi E-Commerce</h1>
+                    <p class="text-blue-100/75 mt-2 max-w-2xl">Jelajahi performa transaksi, temukan pola, dan telusuri seluruh data dengan pengambilan bertahap.</p>
                 </div>
-                <div class="flex flex-wrap items-end gap-3">
-                    <label class="text-sm">Jumlah baris
-                        <select id="limit" class="mt-1 block rounded-lg border-slate-300 border px-3 py-2 bg-white">
+                <div class="relative flex flex-wrap items-end gap-3">
+                    <label class="text-sm text-blue-100">Baris per halaman
+                        <select id="limit" class="mt-1 block rounded-xl border border-white/20 px-3 py-2.5 bg-white text-slate-800 focus:ring-2 focus:ring-blue-300 outline-none">
                             <option>25</option><option selected>100</option><option>250</option><option>500</option><option>1000</option>
                         </select>
                     </label>
-                    <button id="refresh" class="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 font-semibold">Muat data</button>
+                    <button id="refresh" class="rounded-xl bg-white text-blue-900 hover:bg-blue-50 px-5 py-2.5 font-semibold shadow-sm transition">Terapkan</button>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 mt-6">
-                <input id="q" class="rounded-lg border border-slate-300 px-3 py-2" placeholder="Cari di semua kolom...">
-                <select id="status" class="rounded-lg border border-slate-300 px-3 py-2"><option value="">Semua status</option></select>
-                <select id="provinsi" class="rounded-lg border border-slate-300 px-3 py-2"><option value="">Semua provinsi</option></select>
-                <select id="kategori" class="rounded-lg border border-slate-300 px-3 py-2"><option value="">Semua kategori</option></select>
-                <select id="metode_pembayaran" class="rounded-lg border border-slate-300 px-3 py-2"><option value="">Semua metode bayar</option></select>
+            <div class="relative mt-7 pt-5 border-t border-white/15">
+                <div class="flex items-center justify-between mb-3"><h2 class="text-sm font-semibold text-white">Filter transaksi</h2><span class="text-xs text-blue-100/60">Insight menyesuaikan filter</span></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
+                    <select id="status" class="filter-control"><option value="">Semua status</option></select>
+                    <select id="provinsi" class="filter-control"><option value="">Semua provinsi</option></select>
+                    <select id="kategori" class="filter-control"><option value="">Semua kategori</option></select>
+                    <select id="subkategori" class="filter-control"><option value="">Pilih kategori dahulu</option></select>
+                    <select id="metode_pembayaran" class="filter-control"><option value="">Semua metode bayar</option></select>
+                </div>
             </div>
         </header>
 
         <div id="error" class="hidden rounded-xl bg-red-50 border border-red-200 text-red-700 p-4 mb-5"></div>
         <div id="loading" class="text-slate-500 py-8 text-center">Memuat data dan menghitung insight...</div>
         <section id="dashboard" class="hidden">
-            <div class="flex flex-wrap justify-between gap-2 mb-3 text-sm text-slate-500">
+            <div class="flex flex-wrap justify-between gap-2 mb-4 text-sm text-slate-500 px-1">
                 <span id="dataSummary"></span><span id="filterSummary"></span>
             </div>
-            <div id="kpis" class="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-4 mb-6"></div>
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
-                <article class="bg-white rounded-xl border border-slate-200 shadow-sm p-5"><h2 class="font-bold mb-3">Tren omzet per bulan</h2><div class="h-72"><canvas id="monthlyChart"></canvas></div></article>
-                <article class="bg-white rounded-xl border border-slate-200 shadow-sm p-5"><h2 class="font-bold mb-3">Jumlah pesanan per status</h2><div class="h-72"><canvas id="statusChart"></canvas></div></article>
-                <article class="bg-white rounded-xl border border-slate-200 shadow-sm p-5"><h2 class="font-bold mb-3">10 provinsi dengan omzet tertinggi</h2><div class="h-72"><canvas id="provinceChart"></canvas></div></article>
-                <article class="bg-white rounded-xl border border-slate-200 shadow-sm p-5"><h2 class="font-bold mb-3">Kategori utama</h2><div class="h-72"><canvas id="categoryChart"></canvas></div></article>
+            <div id="kpis" class="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-7 gap-3 md:gap-4 mb-6"></div>
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-5 mb-6">
+                <article class="panel xl:col-span-2"><div class="panel-heading"><div><p class="eyebrow">PERFORMA DARI WAKTU KE WAKTU</p><h2>Tren omzet dan pesanan</h2></div><span class="chart-mark">01</span></div><div class="flex flex-wrap items-end gap-3 mb-4"><label class="text-xs font-medium text-slate-500">Bulan dari<select id="bulan_dari" class="filter-control mt-1 min-w-44"><option value="">Awal rentang</option></select></label><label class="text-xs font-medium text-slate-500">Bulan sampai<select id="bulan_sampai" class="filter-control mt-1 min-w-44"><option value="">Akhir rentang</option></select></label><button id="clearMonths" class="text-xs font-semibold text-blue-700 hover:text-blue-900 px-2 py-2">Hapus rentang</button></div><div class="h-80"><canvas id="monthlyChart"></canvas></div></article>
+                <article class="panel"><div class="panel-heading"><div><p class="eyebrow">KOMPOSISI</p><h2 id="compositionTitle">Pesanan per status</h2></div><span class="chart-mark">02</span></div><label class="block text-xs font-medium text-slate-500 mb-3">Kelompok data
+                    <select id="compositionField" class="filter-control mt-1"><option value="status">Status pesanan</option><option value="provinsi">Provinsi</option><option value="kategori">Kategori</option><option value="pembayaran">Metode pembayaran</option><option value="pengiriman">Opsi pengiriman</option><option value="bulan">Bulan (omzet)</option></select>
+                </label><div class="h-64"><canvas id="statusChart"></canvas></div></article>
+                <article class="panel"><div class="panel-heading"><div><p class="eyebrow">SEBARAN</p><h2 id="provinceTitle">10 provinsi teratas · omzet</h2></div><span class="chart-mark">03</span></div><label class="block text-xs font-medium text-slate-500 mb-3">Bandingkan berdasarkan
+                    <select id="provinceMetric" class="filter-control mt-1"><option value="revenue">Total omzet</option><option value="orders">Jumlah pesanan</option><option value="items">Kuantitas produk</option><option value="returns">Produk dikembalikan</option><option value="discount">Total diskon</option></select>
+                </label><div class="h-64"><canvas id="provinceChart"></canvas></div></article>
+                <article class="panel xl:col-span-2"><div class="panel-heading"><div><p class="eyebrow">PRODUK</p><h2>Jumlah pesanan per kategori</h2></div><span class="chart-mark">04</span></div><div class="h-80"><canvas id="categoryChart"></canvas></div></article>
             </div>
+            <article class="panel mb-6"><div class="panel-heading mb-1"><div><p class="eyebrow">JELAJAHI PRODUK</p><h2>Kategori dan subkategori</h2></div></div><p class="text-sm text-slate-500 mb-5">Pilih kategori induk untuk melihat semua jenis di dalamnya, atau klik subkategori untuk memfilter lebih spesifik.</p><div id="categorySections" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div></article>
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
-                <article class="bg-white rounded-xl border border-slate-200 shadow-sm p-5"><h2 class="font-bold mb-3">Metode pembayaran</h2><div id="paymentList" class="space-y-2"></div></article>
-                <article class="bg-white rounded-xl border border-slate-200 shadow-sm p-5"><h2 class="font-bold mb-3">Opsi pengiriman teratas</h2><div id="shippingList" class="space-y-2"></div></article>
+                <article class="panel"><div class="panel-heading"><div><p class="eyebrow">PEMBAYARAN</p><h2>Metode pembayaran</h2></div></div><div id="paymentList" class="space-y-3"></div></article>
+                <article class="panel"><div class="panel-heading"><div><p class="eyebrow">LOGISTIK</p><h2>Opsi pengiriman teratas</h2></div></div><div id="shippingList" class="space-y-3"></div></article>
             </div>
-            <article class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="p-5 flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
-                    <div><h2 class="font-bold">Semua kolom transaksi</h2><p class="text-sm text-slate-500">Menampilkan halaman data sesuai pilihan jumlah baris.</p></div>
-                    <div class="flex gap-2"><button id="previous" class="px-4 py-2 rounded-lg border disabled:opacity-40">Sebelumnya</button><span id="pageInfo" class="px-2 py-2 text-sm text-slate-600"></span><button id="next" class="px-4 py-2 rounded-lg border disabled:opacity-40">Berikutnya</button></div>
+            <article class="panel !p-0 overflow-hidden">
+                <div class="p-5 md:p-6 border-b border-slate-100">
+                    <div class="flex flex-col xl:flex-row gap-4 xl:items-center xl:justify-between">
+                        <div class="shrink-0"><p class="eyebrow">DATA SUMBER</p><h2>Rincian transaksi</h2><p class="text-sm text-slate-500 mt-1">Seluruh kolom transaksi · data ditampilkan bertahap</p></div>
+                        <label class="text-xs font-medium text-slate-500 xl:ml-auto">Cari data
+                            <input id="tableSearch" type="search" class="filter-control mt-1 min-w-64" placeholder="Cari di semua kolom tabel...">
+                        </label>
+                        <div class="flex flex-col sm:flex-row sm:items-end gap-3 xl:justify-end">
+                            <div class="flex items-center justify-between sm:justify-end gap-2"><button id="previous" class="page-button">← Sebelumnya</button><span id="pageInfo" class="min-w-32 text-center text-xs text-slate-500"></span><button id="next" class="page-button">Berikutnya →</button></div>
+                        </div>
+                    </div>
                 </div>
-                <div class="overflow-auto max-h-[70vh] border-t border-slate-200">
+                <div class="overflow-auto max-h-[68vh]">
                     <table class="min-w-full text-sm whitespace-nowrap"><thead id="tableHead" class="sticky top-0 bg-slate-100 z-10"></thead><tbody id="tableBody" class="divide-y divide-slate-100"></tbody></table>
                 </div>
             </article>
         </section>
     </main>
 <script>
-    let offset = 0, latest = null, charts = {};
+    let offset = 0, latest = null, charts = {}, sortColumn = '', sortDirection = 'asc', exactColumnFilters = {};
+    let categoryGroups = [];
     const $ = (id) => document.getElementById(id);
     const idr = (n) => 'Rp ' + Number(n || 0).toLocaleString('id-ID', {maximumFractionDigits: 0});
     const count = (n) => Number(n || 0).toLocaleString('id-ID');
@@ -74,9 +124,61 @@
         select.innerHTML = `<option value="">${placeholder}</option>` + values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
         select.value = current;
     }
+    function updateSubcategoryOptions() {
+        const parent = $('kategori').value;
+        const group = categoryGroups.find(item => item.name === parent);
+        const options = group ? group.subcategories.map(item => item.name) : [];
+        const current = $('subkategori').value;
+        $('subkategori').innerHTML = '<option value="">' + (parent ? 'Semua subkategori' : 'Pilih kategori terlebih dahulu') + '</option>' + options.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
+        $('subkategori').disabled = !parent;
+        if (options.includes(current)) $('subkategori').value = current;
+    }
+    function validateMonthRange(changedId) {
+        const from = $('bulan_dari').value;
+        const to = $('bulan_sampai').value;
+        [...$('bulan_sampai').options].forEach(option => {
+            option.disabled = Boolean(from && option.value && option.value < from);
+        });
+        if (from && to && to < from) {
+            if (changedId === 'bulan_dari') $('bulan_sampai').value = from;
+            else $('bulan_dari').value = to;
+        }
+    }
     function renderChart(id, config) {
         if (charts[id]) charts[id].destroy();
         charts[id] = new Chart($(id), config);
+    }
+    function renderComposition(data) {
+        const field = $('compositionField').value;
+        const choices = {
+            status: {title:'Pesanan per status', rows:data.insights.statuses, value:'count'},
+            provinsi: {title:'Omzet per provinsi · 10 teratas', rows:data.insights.top_provinces, value:'revenue', money:true},
+            kategori: {title:'Pesanan per kategori', rows:data.insights.top_categories, value:'count'},
+            pembayaran: {title:'Pesanan per metode pembayaran', rows:data.insights.payment_methods, value:'count'},
+            pengiriman: {title:'Pesanan per opsi pengiriman', rows:data.insights.shipping_methods, value:'count'},
+            bulan: {title:'Omzet per bulan', rows:data.insights.monthly.map(item=>({...item,name:item.month})), value:'revenue', money:true}
+        };
+        const selected = choices[field] || choices.status;
+        $('compositionTitle').textContent = selected.title;
+        const isPeriod = field === 'bulan';
+        renderChart('statusChart', {
+            type: isPeriod ? 'line' : 'doughnut',
+            data: {labels:selected.rows.map(item=>item.name), datasets:[{
+                label:selected.money ? 'Omzet' : 'Jumlah pesanan',
+                data:selected.rows.map(item=>item[selected.value]),
+                backgroundColor:['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#64748b','#84cc16','#d946ef'],
+                borderColor:isPeriod ? '#2563eb' : '#ffffff', borderWidth:isPeriod ? 2 : 3,
+                fill:isPeriod, tension:.3, pointRadius:isPeriod ? 3 : 0
+            }]},
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:!isPeriod,position:'bottom',labels:{boxWidth:12,padding:12,font:{size:10}}},tooltip:{callbacks:{label:context=>` ${context.label}: ${selected.money ? idr(context.raw) : count(context.raw)}`}}},scales:isPeriod?{y:{beginAtZero:true,ticks:{callback:value=>'Rp '+Number(value).toLocaleString('id-ID')}}}: {}}
+        });
+    }
+    function renderProvinceChart(data) {
+        const metric = $('provinceMetric').value;
+        const labels = {revenue:'omzet',orders:'pesanan',items:'kuantitas produk',returns:'produk dikembalikan',discount:'diskon'};
+        const provinces = [...data.insights.top_provinces].sort((a,b)=>b[metric]-a[metric]).slice(0,10);
+        $('provinceTitle').textContent = `10 provinsi teratas · ${labels[metric]}`;
+        renderChart('provinceChart', {type:'bar',data:{labels:provinces.map(x=>x.name),datasets:[{label:labels[metric],data:provinces.map(x=>x[metric]),backgroundColor:'#3b82f6',borderRadius:6,barThickness:17}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:context=>metric==='revenue'||metric==='discount'?` ${idr(context.raw)}`:` ${count(context.raw)}`}}},scales:{x:{beginAtZero:true,ticks:{callback:v=>(metric==='revenue'||metric==='discount'?'Rp ':'')+Number(v).toLocaleString('id-ID')}}}}});
     }
     function renderList(id, values, total) {
         $(id).innerHTML = values.length ? values.map(v => {
@@ -84,24 +186,50 @@
             return `<div><div class="flex justify-between gap-3 text-sm"><span class="truncate" title="${escapeHtml(v.name)}">${escapeHtml(v.name)}</span><b>${count(v.count)} <span class="font-normal text-slate-500">(${pct.toFixed(1)}%)</span></b></div><div class="h-1.5 bg-slate-100 rounded mt-1"><div class="h-1.5 bg-blue-500 rounded" style="width:${pct}%"></div></div></div>`;
         }).join('') : '<p class="text-sm text-slate-500">Tidak ada data.</p>';
     }
+    function renderCategorySections(groups) {
+        $('categorySections').innerHTML = groups.map((group, index) => `<section class="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white to-slate-50/70 p-4 transition hover:border-blue-200 hover:shadow-md"><div class="flex items-start justify-between gap-3"><button type="button" data-parent="${escapeHtml(group.name)}" class="text-left font-semibold text-slate-800 hover:text-blue-700">${escapeHtml(group.name)}</button><span class="rounded-full bg-blue-50 text-blue-700 px-2.5 py-1 text-xs font-semibold">${count(group.count)}</span></div><div class="mt-3 flex flex-wrap gap-2">${group.subcategories.map(sub => `<button type="button" data-parent="${escapeHtml(group.name)}" data-child="${escapeHtml(sub.name)}" class="rounded-full border border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50 px-3 py-1.5 text-xs text-slate-600 transition">${escapeHtml(sub.name)} <span class="text-slate-400">${count(sub.count)}</span></button>`).join('')}</div></section>`).join('');
+        $('categorySections').querySelectorAll('[data-parent]').forEach(button => button.addEventListener('click', () => {
+            $('kategori').value = button.dataset.parent; $('subkategori').value = ''; loadData(true);
+        }));
+        $('categorySections').querySelectorAll('[data-child]').forEach(button => button.addEventListener('click', () => {
+            $('kategori').value = button.dataset.parent; $('subkategori').value = button.dataset.child; loadData(true);
+        }));
+    }
     function renderInsights(data) {
         const i = data.insights;
         const cards = [
             ['Pesanan', count(i.orders)], ['Total omzet', idr(i.revenue)], ['Rata-rata nilai pesanan', idr(i.average_order_value)],
-            ['Jumlah produk', count(i.items)], ['Produk dikembalikan', count(i.returned_items)], ['Pesanan batal', `${count(i.cancelled_orders)} (${i.cancellation_rate}%)`]
+            ['Jumlah produk', count(i.items)], ['Produk dikembalikan', count(i.returned_items)], ['Transaksi tertinggi', idr(i.highest_order_value)], ['Pesanan batal', `${count(i.cancelled_orders)} (${i.cancellation_rate}%)`]
         ];
-        $('kpis').innerHTML = cards.map(([label, value]) => `<article class="bg-white rounded-xl border border-slate-200 shadow-sm p-4"><p class="text-xs uppercase tracking-wide text-slate-500">${label}</p><p class="text-lg font-bold mt-1 break-words">${value}</p></article>`).join('');
+        const accents = ['border-blue-500','border-violet-500','border-cyan-500','border-emerald-500','border-amber-500','border-rose-500'];
+        $('kpis').innerHTML = cards.map(([label, value], index) => `<article class="bg-white rounded-2xl border border-slate-200/80 border-l-4 ${accents[index]} shadow-sm p-4 md:p-5 min-w-0"><p class="text-[10px] md:text-xs uppercase tracking-[.12em] text-slate-500 font-semibold">${label}</p><p class="text-base md:text-xl font-bold tracking-tight text-slate-800 mt-2 break-words">${value}</p></article>`).join('');
         const monthly = i.monthly;
-        renderChart('monthlyChart', {type:'line',data:{labels:monthly.map(x=>x.month),datasets:[{label:'Omzet',data:monthly.map(x=>x.revenue),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',fill:true,tension:.25},{label:'Pesanan',data:monthly.map(x=>x.orders),borderColor:'#f97316',yAxisID:'y1',tension:.25}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{y:{beginAtZero:true,ticks:{callback:v=>'Rp '+Number(v).toLocaleString('id-ID')}},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false}}}}});
-        renderChart('statusChart', {type:'doughnut',data:{labels:i.statuses.map(x=>x.name),datasets:[{data:i.statuses.map(x=>x.count),backgroundColor:['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#64748b']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
-        renderChart('provinceChart', {type:'bar',data:{labels:i.top_provinces.map(x=>x.name),datasets:[{label:'Omzet',data:i.top_provinces.map(x=>x.revenue),backgroundColor:'#3b82f6',borderRadius:5}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>'Rp '+Number(v).toLocaleString('id-ID')}}}}});
+        renderChart('monthlyChart', {type:'line',data:{labels:monthly.map(x=>x.month),datasets:[{label:'Omzet',data:monthly.map(x=>x.revenue),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',fill:true,tension:.25},{label:'Pesanan',data:monthly.map(x=>x.orders),borderColor:'#f97316',yAxisID:'y1',tension:.25}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},onClick:(event,elements,chart)=>{if(!elements.length)return;const month=chart.data.labels[elements[0].index];$('bulan_dari').value=month;$('bulan_sampai').value=month;loadData(true);setTimeout(()=>$('tableBody').closest('article').scrollIntoView({behavior:'smooth',block:'start'}),250);},plugins:{tooltip:{callbacks:{footer:()=> 'Klik titik untuk melihat transaksi bulan ini'}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'Rp '+Number(v).toLocaleString('id-ID')}},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false}}}}});
+        renderComposition(data);
+        renderProvinceChart(data);
         renderChart('categoryChart', {type:'bar',data:{labels:i.top_categories.map(x=>x.name),datasets:[{label:'Pesanan',data:i.top_categories.map(x=>x.count),backgroundColor:'#8b5cf6',borderRadius:5}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
         renderList('paymentList', i.payment_methods, i.orders);
         renderList('shippingList', i.shipping_methods, i.orders);
+        renderCategorySections(i.category_groups);
     }
     function renderTable(data) {
-        $('tableHead').innerHTML = '<tr>' + data.headers.map(h=>`<th class="text-left px-3 py-3 font-semibold border-b">${escapeHtml(h)}</th>`).join('') + '</tr>';
-        $('tableBody').innerHTML = data.rows.map(row=>'<tr class="hover:bg-blue-50">'+data.headers.map(h=>`<td class="px-3 py-2">${escapeHtml(row[h])}</td>`).join('')+'</tr>').join('');
+        $('tableHead').innerHTML = '<tr><th class="text-left px-3 py-3 font-semibold border-b">NO.</th>' + data.headers.map(h=>`<th class="text-left px-3 py-3 font-semibold border-b">${escapeHtml(h)}</th>`).join('') + '</tr>' +
+            '<tr><th class="column-sort-cell"><span class="text-[10px] text-slate-400 px-1">NO.</span></th>' + data.headers.map((h,index)=>{
+                const numeric = data.options.numeric_columns.includes(h);
+                const direction = sortColumn === h ? sortDirection : '';
+                const values = data.options.column_filter_options[h];
+                const filterControl = values
+                    ? `<select data-column-value-filter="${index}" class="column-filter-input" title="Filter ${escapeHtml(h)}"><option value="">Semua nilai</option>${values.map(value=>`<option value="${escapeHtml(value)}" ${exactColumnFilters[h]===value?'selected':''}>${escapeHtml(value)}</option>`).join('')}</select>`
+                    : '<span class="text-[10px] text-slate-300 px-1">—</span>';
+                return `<th class="column-sort-cell"><div class="flex flex-col gap-1.5">${filterControl}<select data-column-sort="${index}" class="column-sort-select" title="Urutkan kolom ${escapeHtml(h)}"><option value="">Urutkan...</option><option value="asc" ${direction==='asc'?'selected':''}>${numeric?'Rendah → tinggi':'A → Z'}</option><option value="desc" ${direction==='desc'?'selected':''}>${numeric?'Tinggi → rendah':'Z → A'}</option></select></div></th>`;
+            }).join('') + '</tr>';
+        const longFields = ['Alasan Pembatalan','product_categories','Opsi Pengiriman','source_file'];
+        $('tableBody').innerHTML = data.rows.map((row,rowIndex)=>'<tr><td class="row-number">'+count(data.offset+rowIndex+1)+'</td>'+data.headers.map(h=>{
+            const value = row[h] ?? '';
+            if (h === 'Status Pesanan') return `<td><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${value==='Selesai'?'bg-emerald-50 text-emerald-700':value==='Batal'?'bg-rose-50 text-rose-700':'bg-amber-50 text-amber-700'}">${escapeHtml(value)}</span></td>`;
+            if (longFields.includes(h)) return `<td><span class="block max-w-[260px] truncate" title="${escapeHtml(value)}">${escapeHtml(value)}</span></td>`;
+            return `<td>${escapeHtml(value)}</td>`;
+        }).join('')+'</tr>').join('');
         $('pageInfo').textContent = data.filtered_rows ? `Baris ${count(data.offset+1)}–${count(data.offset+data.rows.length)} dari ${count(data.filtered_rows)}` : 'Tidak ada baris';
         $('previous').disabled = data.offset <= 0;
         $('next').disabled = data.offset + data.limit >= data.filtered_rows;
@@ -110,7 +238,9 @@
         if (reset) offset = 0;
         $('loading').classList.remove('hidden'); $('error').classList.add('hidden'); $('refresh').disabled = true;
         const params = new URLSearchParams({limit:$('limit').value, offset:String(offset)});
-        for (const id of ['q','status','provinsi','kategori','metode_pembayaran']) if ($(id).value.trim()) params.set(id, $(id).value.trim());
+        for (const id of ['tableSearch','status','provinsi','kategori','subkategori','metode_pembayaran','bulan_dari','bulan_sampai']) if ($(id).value.trim()) params.set(id === 'tableSearch' ? 'q' : id, $(id).value.trim());
+        for (const [column, value] of Object.entries(exactColumnFilters)) if (value) params.set('col_exact_' + column, value);
+        if (sortColumn) { params.set('sort_column', sortColumn); params.set('sort_direction', sortDirection); }
         try {
             const response = await fetch('/api/data?' + params.toString());
             const data = await response.json();
@@ -119,17 +249,37 @@
             $('dataSummary').textContent = `${count(data.total_rows)} total baris tersedia`;
             $('filterSummary').textContent = `${count(data.filtered_rows)} baris sesuai filter · insight dihitung dari hasil filter`;
             fillSelect('status', data.options.statuses, 'Semua status'); fillSelect('provinsi', data.options.provinces, 'Semua provinsi');
-            fillSelect('kategori', data.options.categories, 'Semua kategori'); fillSelect('metode_pembayaran', data.options.payment_methods, 'Semua metode bayar');
+            fillSelect('kategori', data.options.categories, 'Semua kategori'); categoryGroups = data.options.category_groups; updateSubcategoryOptions(); fillSelect('metode_pembayaran', data.options.payment_methods, 'Semua metode bayar');
+            fillSelect('bulan_dari', data.options.months, 'Pilih bulan awal'); fillSelect('bulan_sampai', data.options.months, 'Pilih bulan akhir'); validateMonthRange();
             renderInsights(data); renderTable(data);
         } catch (error) {
             $('error').textContent = error.message; $('error').classList.remove('hidden');
         } finally { $('loading').classList.add('hidden'); $('refresh').disabled = false; }
     }
     $('refresh').addEventListener('click', () => loadData(true));
+    $('compositionField').addEventListener('change', () => { if (latest) renderComposition(latest); });
+    $('provinceMetric').addEventListener('change', () => { if (latest) renderProvinceChart(latest); });
     $('limit').addEventListener('change', () => loadData(true));
-    for (const id of ['status','provinsi','kategori','metode_pembayaran']) $(id).addEventListener('change', () => loadData(true));
+    for (const id of ['status','provinsi','subkategori','metode_pembayaran']) $(id).addEventListener('change', () => loadData(true));
+    $('bulan_dari').addEventListener('change', () => { validateMonthRange('bulan_dari'); loadData(true); });
+    $('bulan_sampai').addEventListener('change', () => { validateMonthRange('bulan_sampai'); loadData(true); });
+    $('clearMonths').addEventListener('click', () => { $('bulan_dari').value = ''; $('bulan_sampai').value = ''; validateMonthRange(); loadData(true); });
+    $('kategori').addEventListener('change', () => { $('subkategori').value = ''; loadData(true); });
     let searchTimer;
-    $('q').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => loadData(true), 300); });
+    $('tableSearch').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => loadData(true), 350); });
+    $('tableHead').addEventListener('change', event => {
+        const valueFilter = event.target.closest('[data-column-value-filter]');
+        const select = event.target.closest('[data-column-sort]');
+        if (valueFilter && latest) {
+            const column = latest.headers[Number(valueFilter.dataset.columnValueFilter)];
+            exactColumnFilters[column] = valueFilter.value;
+            loadData(true);
+        } else if (select && latest) {
+            if (!select.value) { sortColumn = ''; sortDirection = 'asc'; }
+            else { sortColumn = latest.headers[Number(select.dataset.columnSort)]; sortDirection = select.value; }
+            loadData(true);
+        }
+    });
     $('previous').addEventListener('click', () => { if (latest) { offset = Math.max(0, offset - latest.limit); loadData(); } });
     $('next').addEventListener('click', () => { if (latest) { offset += latest.limit; loadData(); } });
     loadData();
