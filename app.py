@@ -40,6 +40,12 @@ def normalize_status(value):
     return status or "Tidak diketahui"
 
 
+def normalize_category(value):
+    """Use the first category as the concise filter/insight category."""
+    category = (value or "").strip()
+    return category.split(",", 1)[0].strip() if category else "Tidak diketahui"
+
+
 def summarize(rows):
     total = len(rows)
     status = Counter()
@@ -52,7 +58,7 @@ def summarize(rows):
     for row in rows:
         state = normalize_status(row.get("Status Pesanan", ""))
         prov = row.get("Provinsi", "") or "Tidak diketahui"
-        category = row.get("product_categories", "") or "Tidak diketahui"
+        category = normalize_category(row.get("product_categories", ""))
         payment = row.get("Metode Pembayaran", "") or "Tidak diketahui"
         courier = row.get("Opsi Pengiriman", "") or "Tidak diketahui"
         revenue = number(row.get("Total Pembayaran"))
@@ -123,7 +129,8 @@ def get_data():
                 continue
             if filters["provinsi"] and filters["provinsi"] not in row.get("Provinsi", "").casefold():
                 continue
-            if filters["kategori"] and filters["kategori"] not in row.get("product_categories", "").casefold():
+            category = normalize_category(row.get("product_categories", ""))
+            if filters["kategori"] and filters["kategori"] != category.casefold():
                 continue
             if filters["metode_pembayaran"] and filters["metode_pembayaran"] not in row.get("Metode Pembayaran", "").casefold():
                 continue
@@ -147,7 +154,7 @@ def get_data():
             "options": {
             "statuses": sorted({normalize_status(r.get("Status Pesanan", "")) for r in all_rows}),
                 "provinces": sorted({r.get("Provinsi", "") for r in all_rows if r.get("Provinsi", "")}),
-                "categories": sorted({r.get("product_categories", "") for r in all_rows if r.get("product_categories", "")}),
+                "categories": sorted({normalize_category(r.get("product_categories", "")) for r in all_rows}),
                 "payment_methods": sorted({r.get("Metode Pembayaran", "") for r in all_rows if r.get("Metode Pembayaran", "")}),
             },
         })
