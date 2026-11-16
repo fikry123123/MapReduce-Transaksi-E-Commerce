@@ -10,6 +10,7 @@ DATA_FILE = Path(__file__).with_name("all_months_clean.csv")
 DEFAULT_LIMIT = 100
 MAX_LIMIT = 1000
 
+
 def read_dataset():
     """Read the source once per request; only the selected page is returned."""
     with DATA_FILE.open(mode="r", encoding="utf-8-sig", newline="") as file:
