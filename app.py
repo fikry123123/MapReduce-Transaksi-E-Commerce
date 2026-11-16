@@ -10,6 +10,9 @@ DATA_FILE = Path(__file__).with_name("all_months_clean.csv")
 DEFAULT_LIMIT = 100
 MAX_LIMIT = 1000
 
+@app.route('/')
+def home():
+    return "Berhasil deploy di Vercel!"
 
 def read_dataset():
     """Read the source once per request; only the selected page is returned."""
