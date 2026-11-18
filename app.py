@@ -5,8 +5,14 @@ from pathlib import Path
 
 from flask import Flask, Response, jsonify, render_template, request
 
-app = Flask(__name__)
-DATA_FILE = Path(__file__).with_name("all_months_clean.csv")
+PROJECT_ROOT = Path(__file__).resolve().parent
+app = Flask(
+    __name__,
+    template_folder=str(PROJECT_ROOT / "templates"),
+    static_folder=str(PROJECT_ROOT / "static"),
+    static_url_path="/static",
+)
+DATA_FILE = PROJECT_ROOT / "all_months_clean.csv"
 DEFAULT_LIMIT = 100
 MAX_LIMIT = 1000
 
