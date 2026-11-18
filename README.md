@@ -2,6 +2,10 @@
 
 Aplikasi dashboard berbasis Flask untuk menjelajahi data transaksi e-commerce. Dashboard menampilkan KPI, tren omzet dan pesanan, komposisi status, sebaran omzet provinsi, kategori produk, simulasi pengurangan diskon, perbandingan periode, ringkasan anomali, serta tabel transaksi dengan filter dan ekspor CSV.
 
+## Web Preview
+
+[Buka dashboard](https://mapreduce-transaksi-e-commerce.vercel.app/)
+
 ## Fitur
 
 - Filter transaksi berdasarkan status, provinsi, kategori dan subkategori, metode pembayaran, rentang bulan, pencarian, serta nilai kolom tabel.
